@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%23F4EFE3'/%3E%3Crect x='30' y='30' width='50' height='50' fill='%23D7263D'/%3E%3Ccircle cx='125' cy='55' r='25' fill='%23FFD100'/%3E%3Cpolygon points='90,120 60,160 120,160' fill='%231B4F9C'/%3E%3C/svg%3E">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Calendar">
+<title>Calendar</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,700&display=swap');
+
+:root {
+  --bg: #F4EFE3;
+  --bg2: #FFFFFF;
+  --bg3: #E9E1CC;
+  --ink: #1A1A1A;
+
+  --red: #D7263D;
+  --red-dim: #A11B2C;
+  --red-tint: #F6D3D8;
+
+  --yellow: #FFD100;
+  --yellow-dim: #D1A800;
+  --yellow-tint: #FFF0AD;
+
+  --blue: #1B4F9C;
+  --blue-dim: #123A73;
+  --blue-tint: #DAE4F3;
+
+  --green: #5C7A42;
+  --green-dim: #435A2F;
+  --green-tint: #DCE6D0;
+
+  --border: #1A1A1A;
+}
+
+* {
+  margin:0; padding:0; box-sizing:border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.2rem 1.1rem 3.5rem;
+  overscroll-behavior: none;
+}
+
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    radial-gradient(circle at 90% 4%, var(--red) 0 46px, transparent 47px),
+    radial-gradient(circle at 90% 4%, transparent 0 60px, var(--yellow) 61px, transparent 100px),
+    linear-gradient(135deg, var(--blue) 0 100%);
+  background-position: 0 0, 0 0, -12% 96%;
+  background-size: 100% 100%, 100% 100%, 220px 220px;
+  background-repeat: no-repeat;
+  opacity: 0.13;
+  pointer-events:none; z-index:0;
+}
+
+.header { text-align: center; margin-bottom: 1.3rem; z-index: 1; }
+.label-top {
+  font-weight: 800; letter-spacing: 0.24em; font-size: 1.3rem;
+  color: var(--ink); text-transform: uppercase; margin-bottom: 0.3rem;
+}
+.label-sub {
+  font-size: 0.58rem; letter-spacing: 0.28em; color: rgba(26,26,26,0.42);
+  text-transform: uppercase;
+}
+.bauhaus-mark { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.7rem; }
+.mark-circle { width: 16px; height: 16px; border-radius: 50%; background: var(--red); }
+.mark-square { width: 14px; height: 14px; background: var(--yellow); transform: rotate(45deg); }
+.mark-triangle { width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid var(--blue); }
+
+.app-wrap { z-index: 1; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── TABS ── */
+.tab-bar { display: flex; gap: 0.5rem; }
+.tab-btn {
+  flex: 1; padding: 0.8rem 0; text-align: center; cursor: pointer;
+  font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 0.68rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  border: 3px solid var(--border); background: var(--bg2); color: var(--ink);
+}
+.tab-btn.active { background: var(--red); color: #fff; box-shadow: 4px 4px 0 var(--ink); }
+.tab-panel { display: none; flex-direction: column; gap: 1rem; }
+.tab-panel.active { display: flex; }
+
+/* ── NAV BAR (shared by month + year navigation) ── */
+.nav-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+  background: var(--bg2); border: 3px solid var(--border); box-shadow: 4px 4px 0 var(--ink);
+  padding: 0.6rem 0.7rem;
+}
+.nav-btn {
+  width: 40px; height: 40px; border: 3px solid var(--border); background: var(--bg2);
+  font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.nav-btn:active { background: var(--bg3); }
+.nav-label { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.04em; text-align: center; flex: 1; }
+.nav-tag {
+  display: block; font-size: 0.52rem; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--red-dim); margin-top: 0.15rem;
+}
+
+/* ── CARD ── */
+.card {
+  position: relative; width: 100%; background: var(--bg2); border: 3px solid var(--border);
+  padding: 1.1rem 1.1rem 1.15rem; box-shadow: 4px 4px 0 var(--ink);
+}
+.card::before { content: ''; position: absolute; top: -3px; left: -3px; right: -3px; height: 6px; background: var(--accent, var(--red)); }
+.card-accent-red { --accent: var(--red); }
+.card-accent-blue { --accent: var(--blue); }
+.card-accent-yellow { --accent: var(--yellow); }
+.card-accent-green { --accent: var(--green); }
+
+.section-title {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
+  font-weight: 800; color: var(--ink); margin-bottom: 0.7rem;
+}
+.section-title::before { content: ''; width: 10px; height: 10px; background: var(--accent, var(--red)); flex-shrink: 0; }
+
+/* ── TODAY CARD (454 tab) ── */
+.today-card { background: var(--blue); color: #fff; }
+.today-card .section-title { color: rgba(255,255,255,0.85); }
+.today-card .section-title::before { background: #fff; }
+.today-date { font-weight: 800; font-size: 1.4rem; letter-spacing: 0.01em; margin-bottom: 0.7rem; }
+.today-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.today-pill {
+  border: 2px solid rgba(255,255,255,0.7); padding: 0.35rem 0.7rem;
+  font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.today-pill.leap { background: var(--yellow); color: var(--ink); border-color: var(--ink); }
+
+/* ── WEEKDAY LEGEND ── */
+.weekday-legend { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 0.2rem; padding: 0 0.2rem; }
+.weekday-legend.month-legend { grid-template-columns: repeat(7, 1fr); }
+.weekday-legend span {
+  text-align: center; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.05em;
+  text-transform: uppercase; color: rgba(26,26,26,0.5);
+}
+.weekday-legend span.weekend { color: var(--red-dim); }
+
+/* ── QUARTER (454 tab) ── */
+.quarter-title {
+  display: flex; align-items: center; gap: 0.55rem; margin: 0.3rem 0 -0.1rem;
+  font-weight: 800; font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase;
+}
+.quarter-swatch { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* ── PERIOD (454 tab) ── */
+.period-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.55rem; }
+.period-name { font-weight: 800; font-size: 0.85rem; }
+.period-range { font-size: 0.6rem; color: rgba(26,26,26,0.5); font-weight: 700; letter-spacing: 0.03em; }
+
+.week-row { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 0.2rem; align-items: center; padding: 0.3rem 0; border-bottom: 1px solid var(--bg3); }
+.week-row:last-child { border-bottom: none; }
+.week-label { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(26,26,26,0.45); }
+.day-cell { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 32px; }
+.day-num { font-weight: 700; font-size: 0.72rem; color: var(--ink); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+.day-cell.weekend .day-num { color: var(--red-dim); }
+.day-cell.today .day-num { background: var(--red); color: #fff; border-radius: 50%; font-weight: 800; }
+.month-tag { position: absolute; bottom: -1px; font-size: 0.36rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--blue-dim); }
+
+/* ── LEAP WEEK (454 tab) ── */
+.leap-card { border-style: dashed; background: var(--yellow-tint); }
+.leap-card::before { background: var(--yellow-dim); }
+.leap-note { font-size: 0.64rem; line-height: 1.5; color: rgba(26,26,26,0.65); margin-top: 0.6rem; }
+
+/* ── MONTH GRID (Month tab) ── */
+.month-grid-card { padding: 1rem 0.7rem 1.1rem; }
+.month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.35rem; }
+.month-daycell {
+  position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  background: var(--bg2); border: 2px solid var(--bg3); cursor: pointer;
+}
+.month-daycell.blank { visibility: hidden; pointer-events: none; border: none; }
+.month-daycell .day-num { font-weight: 700; font-size: 0.85rem; color: var(--ink); }
+.month-daycell.weekend .day-num { color: var(--red-dim); }
+.month-daycell.today { border-color: var(--red); border-width: 3px; }
+.month-daycell.selected { background: var(--blue); border-color: var(--blue); }
+.month-daycell.selected .day-num { color: #fff; }
+.month-daycell .event-dot {
+  position: absolute; bottom: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--red);
+}
+.month-daycell.selected .event-dot { background: var(--yellow); }
+
+/* ── EVENTS CARD (Month tab) ── */
+.events-heading { font-weight: 800; font-size: 0.92rem; margin-bottom: 0.7rem; }
+.event-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.85rem; }
+.event-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.55rem 0.65rem; border: 2px solid var(--border); background: var(--bg3);
+}
+.event-item span { font-weight: 600; font-size: 0.78rem; word-break: break-word; -webkit-user-select: text; user-select: text; }
+.event-delete {
+  flex-shrink: 0; width: 26px; height: 26px; border: 2px solid var(--border); background: var(--bg2);
+  font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: rgba(26,26,26,0.55);
+}
+.event-delete:active { background: var(--red-tint); border-color: var(--red); color: var(--red-dim); }
+.event-empty { font-size: 0.7rem; color: rgba(26,26,26,0.5); text-align: center; padding: 0.4rem 0 0.8rem; }
+.event-input-row { display: flex; gap: 0.5rem; }
+.event-input-row input.text-input { flex: 1; }
+.event-input-row .btn { flex-shrink: 0; width: auto; padding: 0 1.1rem; }
+
+.text-input {
+  width: 100%; font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 600;
+  padding: 0.7rem 0.75rem; border: 3px solid var(--border); background: var(--bg2);
+  color: var(--ink); -webkit-user-select: text; user-select: text; appearance: none; -webkit-appearance: none;
+}
+.text-input:focus { outline: none; border-color: var(--red); }
+
+.btn {
+  font-family: 'Poppins', sans-serif; font-size: 0.76rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; padding: 0.75rem 0;
+  cursor: pointer; border: 3px solid var(--border); background: var(--bg2);
+  color: var(--ink); flex: 1; text-align: center;
+}
+.btn:active { background: var(--bg3); }
+.btn.btn-primary { background: var(--red); color: #fff; border-color: var(--red); box-shadow: 4px 4px 0 var(--ink); }
+.btn.btn-primary:active { background: var(--red-dim); box-shadow: 1px 1px 0 var(--ink); }
+
+.note-text { font-size: 0.62rem; letter-spacing: 0.02em; line-height: 1.5; color: rgba(26,26,26,0.55); text-align: center; margin-top: 0.7rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="label-top">Calendar</div>
+  <div class="label-sub">monthly &middot; 454 &middot; monday first</div>
+  <div class="bauhaus-mark">
+    <span class="mark-circle"></span>
+    <span class="mark-square"></span>
+    <span class="mark-triangle"></span>
+  </div>
+</div>
+
+<div class="app-wrap">
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="month" onclick="showTab('month')">Month</button>
+    <button class="tab-btn" data-tab="fiveFour" onclick="showTab('fiveFour')">454</button>
+  </div>
+
+  <!-- ══ PRIMARY TAB — MONTH VIEW ══ -->
+  <div class="tab-panel active" id="panel-month">
+
+    <div class="nav-bar">
+      <button class="nav-btn" onclick="changeMonth(-1)">&larr;</button>
+      <div>
+        <div class="nav-label" id="month-label">September 2026</div>
+      </div>
+      <button class="nav-btn" onclick="changeMonth(1)">&rarr;</button>
+    </div>
+
+    <div class="card card-accent-blue month-grid-card">
+      <div class="weekday-legend month-legend">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+        <span class="weekend">Sat</span><span class="weekend">Sun</span>
+      </div>
+      <div class="month-grid" id="month-grid" style="margin-top:0.5rem;"></div>
+    </div>
+
+    <div class="card card-accent-red">
+      <div class="events-heading" id="events-heading">Select a day</div>
+      <div class="event-list" id="event-list"></div>
+      <div class="event-input-row">
+        <input type="text" id="event-input" class="text-input" placeholder="Add an event" maxlength="80">
+        <button class="btn btn-primary" onclick="addEvent()">Add</button>
+      </div>
+      <div class="note-text">Events are stored only on this device, and clear out automatically once their month has ended.</div>
+    </div>
+
+  </div>
+
+  <!-- ══ SECONDARY TAB — 454 VIEW ══ -->
+  <div class="tab-panel" id="panel-fiveFour">
+
+    <div class="nav-bar">
+      <button class="nav-btn" onclick="changeYear(-1)">&larr;</button>
+      <div>
+        <div class="nav-label" id="year-label">2026</div>
+        <span class="nav-tag" id="year-tag">53-WEEK YEAR</span>
+      </div>
+      <button class="nav-btn" onclick="changeYear(1)">&rarr;</button>
+    </div>
+
+    <div class="card today-card">
+      <div class="section-title">Today</div>
+      <div class="today-date" id="today-date">&mdash;</div>
+      <div class="today-pills" id="today-pills"></div>
+    </div>
+
+    <div class="weekday-legend">
+      <span></span>
+      <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+      <span class="weekend">Sat</span><span class="weekend">Sun</span>
+    </div>
+
+    <div id="calendar-body"></div>
+
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('selectstart', function (e) { e.preventDefault(); });
+document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+// ══════════════════════════════════════════════════════
+//  AUDIO — every button gets a click sound
+// ══════════════════════════════════════════════════════
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+let clickNoiseBuffer = null;
+function getClickNoiseBuffer(ctx) {
+  if (!clickNoiseBuffer) {
+    const len = Math.floor(ctx.sampleRate * 0.03);
+    clickNoiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = clickNoiseBuffer.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+  }
+  return clickNoiseBuffer;
+}
+function playButtonClickSound() {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    const noise = ctx.createBufferSource();
+    noise.buffer = getClickNoiseBuffer(ctx);
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.setValueAtTime(2600, now);
+    bandpass.Q.value = 0.9;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.5, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+    noise.connect(bandpass).connect(noiseGain).connect(ctx.destination);
+    noise.start(now); noise.stop(now + 0.03);
+
+    const thock = ctx.createOscillator();
+    const thockGain = ctx.createGain();
+    thock.type = 'sine';
+    thock.frequency.setValueAtTime(180, now);
+    thock.frequency.exponentialRampToValueAtTime(90, now + 0.02);
+    thockGain.gain.setValueAtTime(0.16, now);
+    thockGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+    thock.connect(thockGain).connect(ctx.destination);
+    thock.start(now); thock.stop(now + 0.03);
+  } catch (e) {}
+}
+document.addEventListener('click', function (e) {
+  if (e.target.closest('button')) playButtonClickSound();
+}, true);
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function uid() { return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// ══════════════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.getElementById('panel-month').classList.toggle('active', name === 'month');
+  document.getElementById('panel-fiveFour').classList.toggle('active', name === 'fiveFour');
+}
+
+// ══════════════════════════════════════════════════════
+//  MONTH VIEW — events stored on-device (localStorage),
+//  keyed by date, pruned once their month has fully ended.
+// ══════════════════════════════════════════════════════
+const EVENTS_KEY = 'calendarEventsByDate';
+const MONTH_NAMES_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function loadEvents() {
+  try { return JSON.parse(localStorage.getItem(EVENTS_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveEvents(events) {
+  try { localStorage.setItem(EVENTS_KEY, JSON.stringify(events)); } catch (e) {}
+}
+function pruneOldEvents(events) {
+  const now = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  let changed = false;
+  Object.keys(events).forEach(key => {
+    const [y, m] = key.split('-').map(Number);
+    const keyMonthStart = new Date(y, m - 1, 1);
+    if (keyMonthStart < thisMonthStart) { delete events[key]; changed = true; }
+  });
+  if (changed) saveEvents(events);
+  return events;
+}
+let monthEvents = pruneOldEvents(loadEvents());
+
+function dateKey(y, m, d) { return `${y}-${pad2(m + 1)}-${pad2(d)}`; }
+function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+function firstWeekdayMonday(y, m) { const jsDay = new Date(y, m, 1).getDay(); return (jsDay + 6) % 7; }
+
+const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+let viewYear = today0.getFullYear();
+let viewMonth = today0.getMonth();
+let selectedKey = dateKey(viewYear, viewMonth, today0.getDate());
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  // default-select the 1st of the newly viewed month (or today, if it's the current month)
+  if (viewYear === today0.getFullYear() && viewMonth === today0.getMonth()) {
+    selectedKey = dateKey(viewYear, viewMonth, today0.getDate());
+  } else {
+    selectedKey = dateKey(viewYear, viewMonth, 1);
+  }
+  renderMonth();
+}
+
+function selectDay(key) {
+  selectedKey = key;
+  renderMonth();
+}
+
+function addEvent() {
+  const input = document.getElementById('event-input');
+  const text = input.value.trim();
+  if (!text || !selectedKey) return;
+  if (!monthEvents[selectedKey]) monthEvents[selectedKey] = [];
+  monthEvents[selectedKey].push({ id: uid(), text });
+  saveEvents(monthEvents);
+  input.value = '';
+  renderMonth();
+}
+function deleteEvent(key, id) {
+  if (!monthEvents[key]) return;
+  monthEvents[key] = monthEvents[key].filter(e => e.id !== id);
+  if (monthEvents[key].length === 0) delete monthEvents[key];
+  saveEvents(monthEvents);
+  renderMonth();
+}
+
+function renderMonth() {
+  document.getElementById('month-label').textContent = `${MONTH_NAMES_FULL[viewMonth]} ${viewYear}`;
+
+  const leading = firstWeekdayMonday(viewYear, viewMonth);
+  const total = daysInMonth(viewYear, viewMonth);
+  let html = '';
+  for (let i = 0; i < leading; i++) html += `<div class="month-daycell blank"></div>`;
+  for (let d = 1; d <= total; d++) {
+    const key = dateKey(viewYear, viewMonth, d);
+    const cellDate = new Date(viewYear, viewMonth, d);
+    const isToday = cellDate.getTime() === today0.getTime();
+    const isSelected = key === selectedKey;
+    const isWeekend = (cellDate.getDay() === 0 || cellDate.getDay() === 6);
+    const hasEvents = monthEvents[key] && monthEvents[key].length > 0;
+    html += `<div class="month-daycell${isWeekend ? ' weekend' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" onclick="selectDay('${key}')">
+      <span class="day-num">${d}</span>
+      ${hasEvents ? '<span class="event-dot"></span>' : ''}
+    </div>`;
+  }
+  const totalCells = leading + total;
+  const trailing = (7 - (totalCells % 7)) % 7;
+  for (let i = 0; i < trailing; i++) html += `<div class="month-daycell blank"></div>`;
+  document.getElementById('month-grid').innerHTML = html;
+
+  // Events card
+  if (selectedKey) {
+    const [y, m, d] = selectedKey.split('-').map(Number);
+    const heading = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    document.getElementById('events-heading').textContent = heading;
+    const list = monthEvents[selectedKey] || [];
+    document.getElementById('event-list').innerHTML = list.length
+      ? list.map(e => `<div class="event-item"><span>${escapeHTML(e.text)}</span><button class="event-delete" onclick="deleteEvent('${selectedKey}','${e.id}')">&times;</button></div>`).join('')
+      : `<div class="event-empty">No events yet on this day.</div>`;
+  }
+}
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ══════════════════════════════════════════════════════
+//  454 VIEW — ISO week-year math (Monday-first weeks,
+//  52 or 53 weeks/year), grouped into a 4-5-4 period pattern.
+// ══════════════════════════════════════════════════════
+function isoWeek1Monday(year) {
+  const jan4 = new Date(year, 0, 4);
+  const day = jan4.getDay() || 7;
+  const monday = new Date(jan4);
+  monday.setDate(jan4.getDate() - (day - 1));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
+function weeksInYear(year) {
+  const start = isoWeek1Monday(year);
+  const nextStart = isoWeek1Monday(year + 1);
+  return Math.round((nextStart - start) / (7 * 86400000));
+}
+function buildYearWeeks(year) {
+  const start = isoWeek1Monday(year);
+  const total = weeksInYear(year);
+  const weeks = [];
+  for (let i = 0; i < total; i++) {
+    const wkStart = addDays(start, i * 7);
+    weeks.push({ index: i + 1, start: wkStart, end: addDays(wkStart, 6) });
+  }
+  return weeks;
+}
+
+const PERIOD_PATTERN = [4, 5, 4, 4, 5, 4, 4, 5, 4, 4, 5, 4];
+const PERIOD_MONTH = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const QUARTER_ACCENT = ['red', 'blue', 'yellow', 'green'];
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function buildPeriods(weeks) {
+  const periods = [];
+  let idx = 0;
+  for (let p = 0; p < 12; p++) {
+    const count = PERIOD_PATTERN[p];
+    const periodWeeks = weeks.slice(idx, idx + count);
+    idx += count;
+    periods.push({ number: p + 1, monthName: PERIOD_MONTH[p], quarter: Math.floor(p / 3), weeks: periodWeeks });
+  }
+  const leapWeek = weeks.length > 52 ? weeks[52] : null;
+  return { periods, leapWeek };
+}
+
+function fmtDate(d) { return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`; }
+function isSameDate(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+
+function dayCellHTML(date, today) {
+  const isToday = isSameDate(date, today);
+  const dow = date.getDay();
+  const weekend = (dow === 0 || dow === 6);
+  const monthTag = date.getDate() === 1 ? `<span class="month-tag">${MONTH_ABBR[date.getMonth()]}</span>` : '';
+  return `<div class="day-cell${weekend ? ' weekend' : ''}${isToday ? ' today' : ''}">
+    <span class="day-num">${date.getDate()}</span>${monthTag}
+  </div>`;
+}
+function weekRowHTML(week, today) {
+  let cells = '';
+  for (let i = 0; i < 7; i++) cells += dayCellHTML(addDays(week.start, i), today);
+  return `<div class="week-row"><span class="week-label">Wk ${week.index}</span>${cells}</div>`;
+}
+function periodCardHTML(period, today) {
+  const first = period.weeks[0], last = period.weeks[period.weeks.length - 1];
+  const accent = QUARTER_ACCENT[period.quarter];
+  return `<div class="card card-accent-${accent}">
+    <div class="period-head">
+      <span class="period-name">Period ${period.number} &middot; ${period.monthName}</span>
+      <span class="period-range">${fmtDate(first.start)} &ndash; ${fmtDate(last.end)}</span>
+    </div>
+    ${period.weeks.map(w => weekRowHTML(w, today)).join('')}
+  </div>`;
+}
+function leapWeekCardHTML(week, today) {
+  return `<div class="card leap-card">
+    <div class="section-title">Leap Week &middot; Week ${week.index}</div>
+    <div class="period-head">
+      <span class="period-name">Extra Week</span>
+      <span class="period-range">${fmtDate(week.start)} &ndash; ${fmtDate(week.end)}</span>
+    </div>
+    ${weekRowHTML(week, today)}
+    <div class="leap-note">This week doesn't belong to any period. It's added roughly every 5&ndash;6 years to keep the 52-week 4-5-4 calendar aligned with the actual solar year.</div>
+  </div>`;
+}
+
+let currentYear = new Date().getFullYear();
+
+function renderFiveFour() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const weeks = buildYearWeeks(currentYear);
+  const { periods, leapWeek } = buildPeriods(weeks);
+  const isLeapYear = weeks.length > 52;
+
+  document.getElementById('year-label').textContent = currentYear;
+  document.getElementById('year-tag').textContent = isLeapYear ? '53-WEEK YEAR' : '52-WEEK YEAR';
+
+  const todayWeek = weeks.find(w => today >= w.start && today <= w.end);
+  const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  document.getElementById('today-date').textContent = dateStr;
+  let pillsHTML = '';
+  if (todayWeek) {
+    pillsHTML += `<span class="today-pill">Week ${todayWeek.index}</span>`;
+    if (todayWeek.index <= 52) {
+      const period = periods.find(p => p.weeks.some(w => w.index === todayWeek.index));
+      pillsHTML += `<span class="today-pill">Period ${period.number} &middot; ${period.monthName}</span>`;
+      pillsHTML += `<span class="today-pill">Q${period.quarter + 1}</span>`;
+    } else {
+      pillsHTML += `<span class="today-pill leap">Leap Week</span>`;
+    }
+  } else {
+    pillsHTML += `<span class="today-pill">Outside ${currentYear}</span>`;
+  }
+  document.getElementById('today-pills').innerHTML = pillsHTML;
+
+  let html = '';
+  for (let q = 0; q < 4; q++) {
+    const accent = QUARTER_ACCENT[q];
+    html += `<div class="quarter-title"><span class="quarter-swatch" style="background:var(--${accent})"></span>Quarter ${q + 1}</div>`;
+    for (let p = q * 3; p < q * 3 + 3; p++) html += periodCardHTML(periods[p], today);
+  }
+  if (leapWeek) {
+    html += `<div class="quarter-title"><span class="quarter-swatch" style="background:var(--yellow-dim)"></span>Beyond Q4</div>`;
+    html += leapWeekCardHTML(leapWeek, today);
+  }
+  document.getElementById('calendar-body').innerHTML = html;
+}
+
+function changeYear(delta) {
+  currentYear += delta;
+  renderFiveFour();
+}
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+renderMonth();
+renderFiveFour();
+</script>
+</body>
+</html>
